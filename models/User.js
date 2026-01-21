@@ -21,21 +21,20 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['user', 'admin'],
-    default: user,
+    default: 'user',
   },
 });
 
 // securing user password using password hashing
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
   try {
-    if (!this.isModified('password')) return next();
+    if (!this.isModified('password')) return;
 
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
   } catch (error) {
     console.error(error);
-    next(error);
+    throw error;
   }
 });
 
