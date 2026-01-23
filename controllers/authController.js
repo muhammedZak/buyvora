@@ -1,7 +1,6 @@
 const User = require('../models/User');
 
-// @desc Register new user
-// @route POST/api/auth/register
+const generateToken = require('../utils/generateToken');
 
 const registerUser = async (req, res) => {
   try {
@@ -80,6 +79,15 @@ const loginUser = async (req, res) => {
       });
     }
 
+    const token = generateToken(user._id);
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       status: true,
       message: 'Login successfull',
@@ -99,4 +107,9 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+const userLogOut = async (req, res) => {
+  res.clearCookie('token');
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
+};
+
+module.exports = { registerUser, loginUser, userLogOut };
