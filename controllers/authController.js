@@ -112,4 +112,6 @@ const userLogOut = async (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
+
+
 module.exports = { registerUser, loginUser, userLogOut };
