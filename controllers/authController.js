@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const User = require('../models/User');
 
 const generateToken = require('../utils/generateToken');
@@ -112,6 +113,45 @@ const userLogOut = async (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
+// forgot password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
 
+    const user = await User.findOne({ email });
 
-module.exports = { registerUser, loginUser, userLogOut };
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: 'No user found with this email',
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    res.status(200).json({
+      status: true,
+      message: 'Token generated',
+      data: {
+        token: resetToken,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+module.exports = { registerUser, loginUser, userLogOut, forgotPassword };
