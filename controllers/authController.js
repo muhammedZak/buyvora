@@ -154,4 +154,50 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, userLogOut, forgotPassword };
+// Reset password
+
+const resetpassword = async (req, res) => {
+  try {
+    const token = req.params.token;
+    const { password } = req.body;
+
+    const resetToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      passwordResetToken: resetToken,
+      passwordResetExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: 'No user found',
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiry = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  userLogOut,
+  forgotPassword,
+  resetpassword,
+};
