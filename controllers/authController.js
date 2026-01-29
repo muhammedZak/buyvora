@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const User = require('../models/User');
 
 const generateToken = require('../utils/generateToken');
-
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -194,10 +193,46 @@ const resetpassword = async (req, res) => {
   }
 };
 
+const verifyEmail = async (req, res) => {
+  try {
+    const token = req.params.token;
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      emialVerificationToken: hashedToken,
+      emialVerificationTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: 'Invalid or expired verification link',
+      });
+    }
+
+    user.isVerified = true;
+    user.emialVerificationToken = undefined;
+    user.emialVerificationTokenExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verification has been successfully completed!',
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   userLogOut,
   forgotPassword,
   resetpassword,
+  verifyEmail,
 };
